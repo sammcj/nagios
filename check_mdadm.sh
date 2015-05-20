@@ -5,25 +5,45 @@
 STATUS=""
 EXIT=""
 
-# Get array names
-RAID_DEVICES=$(grep ^md /proc/mdstat | awk '{print "/dev/"$1}')
+# Get all array names
+function RAID_DEVICES {
+  grep ^md /proc/mdstat | awk '{print "/dev/"$1}'
+}
 
 # Get the name of any failed arrays
-FAILED_ARRAYS=$(awk '/.*_.*/{print a}{a=$1}' /proc/mdstat)
+function FAILED_ARRAYS {
+  awk '/.*_.*/{print a}{a=$1}' /proc/mdstat
+}
 
-# Is an array currently recovering, get percentage of recovery
-RAID_RECOVER=`grep recovery /proc/mdstat | awk '{print $4}'`
+# Get the name of any arrays recovering
+function RAID_RECOVER {
+  awk '/recovery/{print $0}' /proc/mdstat
+}
 
-# Check raid status
-if [[ $RAID_RECOVER ]]; then
-  STATUS="$STATUS WARNING - Recovering : $RAID_RECOVER"
-  EXIT=1
-elif [[ -z $FAILED_ARRAYS ]]; then
-  STATUS="$STATUS OK - Checked $RAID_DEVICES arrays."
-  EXIT=0
-else
-  STATUS="CRITICAL - FAILED RAID ARRAY(S): $FAILED_ARRAYS"
+# The number of arrays
+NUM_ARRAYS=$(RAID_DEVICES | wc -l)
+
+# The number of failed arrays
+NUM_FAILED=$(FAILED_ARRAYS | wc -l)
+
+# The number of recovering arrays
+NUM_RECOVER=$(RAID_RECOVER | wc -l)
+
+
+# If the number of failed arrays doesn't match the number that are recoverying, return CRITICAL
+if [[ $NUM_RECOVER -ne $NUM_FAILED ]]; then
+  STATUS="CRITICAL - FAILED RAID ARRAY(S): $(FAILED_ARRAYS)"
   EXIT=2
+
+# If the only failed arrays are recovering, return WARNING
+elif [[ $NUM_RECOVER -gt 0 ]]; then
+  STATUS="$STATUS WARNING - Recovering : $(RAID_RECOVER)"
+  EXIT=1
+
+# If there are no failed arrays return OK
+elif [[ -z $FAILED_ARRAYS ]]; then
+  STATUS="$STATUS OK - Checked $(RAID_DEVICES)."
+  EXIT=0
 fi
 
 # Status and quit
