@@ -12,3 +12,5 @@ Various nagios plugins I've written over the years
 [check_hvm.sh](https://github.com/sammcj/nagios/blob/master/check_hvm.sh) - Check if kernel version is 3.1X and alerts if HVM is not set
 
 [check_sockets.sh](https://github.com/sammcj/nagios/blob/master/check_sockets.sh) - Check the number of sockets an application (Docker by default) is using and warn / alert if over a threshold
+
+[check_mdadm.sh](https://github.com/sammcj/nagios/blob/master/check_mdadm.sh) - Check Linux RAID (mdadm) status.
