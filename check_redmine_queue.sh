@@ -6,7 +6,7 @@
 #
 # Example:
 # ./check_redmine_queue.sh <API Key> <Project ID> <Issue priority to monitor> <Redmine URL>
-# ./check_redmine_queue.sh 12345abc12345abc 1 5 https://redmine.office.infoxchange.net.au
+# ./check_redmine_queue.sh 12345abc12345abc 1 5\|6 https://redmine.office.infoxchange.net.au
 
 API_KEY=$1
 PROJECT_ID=$2
@@ -20,7 +20,7 @@ echo $TICKET_INFO | grep -q "\"total_count\":0"
 if [ $? -ne 0 ]
 then
   echo "%s" "$0:\", ..." $TICKET_INFO | grep -Po '"subject":.*?[^\\],'| sed -e 's/"subject":/ /g' | sed 's/\"//g' | tr -d '\n'
-  exit 1
+  exit 2
 else
   exit 0
 fi
