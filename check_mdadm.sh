@@ -22,11 +22,8 @@ function RAID_RECOVER {
 
 # Get the name of any arrays resync
 function RAID_RESYNC {
-  awk '/resync/{print $0}' /proc/mdstat
+  awk '/resync/ && !/DELAYED/{print $0}' /proc/mdstat
 }
-
-# The number of arrays
-NUM_ARRAYS=$(RAID_DEVICES | wc -l)
 
 # The number of failed arrays
 NUM_FAILED=$(FAILED_ARRAYS | wc -l)
