@@ -1,6 +1,8 @@
 # nagios
 Various nagios plugins I've written over the years
 
+[![Issue Count](https://codeclimate.com/github/sammcj/nagios/badges/issue_count.svg)](https://codeclimate.com/github/sammcj/nagios)
+
 [check_logstash.sh](https://github.com/sammcj/nagios/blob/master/check_logstash.sh) - Checks and alerts if Logstash is not logging to Elasticsearch
 
 [check_puppet.sh](https://github.com/sammcj/nagios/blob/master/check_puppet.sh) - Alerts if the Puppet agent not running, or is disabled.
