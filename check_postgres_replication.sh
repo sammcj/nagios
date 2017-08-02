@@ -3,7 +3,9 @@
 # Usage:
 # ./check_postgres_replication.sh int-docker-pg-vip int-docker-pg-standby mycoolapp
 #
-# Author: Sam McLeod
+# Warning and Critical values are the size of wal files e.g.
+# 83886080 = 5 * 16MB, (default) size of 5 WAL files
+# 16777216 = 16 MB, (default) size of 1 WAL file
 
 STATE_OK=0
 STATE_WARNING=1
@@ -16,15 +18,15 @@ function usage () {
 	cat <<-EOF
 
 	Usage:
-	    ${0##*/} [--config config_file] [--help]
+	    ${0##*/} [-c --config config_file] [-p --port 5432] [-W --warn 16777216] [-C --crit 83886080] [--help]
 	        --config ... path to config file, default: $CONFIG_FILE
 
 	    Example:
-	        ${0##*/} --config $CONFIG_FILE
+	        ${0##*/} --config $CONFIG_FILE -W 16777216 -C 83886080
 	EOF
 }
 
-GETOPT_PARSED=$(getopt -o hvc: --long help,verbose,config: -- "$@" )
+GETOPT_PARSED=$(getopt -o hvW:C:p:c: --long help,verbose,config:,port:,warn:,crit: -- "$@" )
 if [[ $? != 0 ]] ; then "aborting..." >&2; usage ; exit 1 ; fi
 
 eval set -- "$GETOPT_PARSED"
@@ -33,6 +35,9 @@ while true ; do
         -h|--help) usage; exit 1 ;;
         -v|--verbose) VERBOSE=1; shift ;;
         -c|--config) CONFIG_FILE=$2 ; shift 2 ;;
+        -p|--port) PORT=$2 ; shift 2 ;;
+        -W|--warn) WARN=$2 ; shift 2 ;;
+        -C|--crit) CRIT=$2 ; shift 2 ;;
         --) shift ; break ;;
         *) echo "Internal error!" ; exit 1 ;;
     esac
@@ -45,14 +50,14 @@ fi
 
 ## Master (p_) and Slave (s_) DB Server Information
 p_host=${POSTGRES_ACTIVE_IP:-$1}
-p_port=5432
+p_port=${PORT:-5432}
 s_host=${POSTGRES_STANDBY_IP:-$2}
-s_port=5432
+s_port=${PORT:-5432}
 database=${3:-postgres}
 
 ## Limits
-critical_limit=83886080 # 5 * 16MB, size of 5 WAL files
-warning_limit=16777216 # 16 MB, size of 1 WAL file
+critical_limit=${CRIT:-83886080} # 5 * 16MB, size of 5 WAL files
+warning_limit=${WARN:-16777216} # 16 MB, size of 1 WAL file
 
 function bytes() {
     bytes=$1
@@ -134,3 +139,4 @@ if [[ "$replay_lag_s" != U ]]; then
 fi
 echo "${MESSAGE}|${PERFDATA}"
 exit $EXIT_CODE
+
