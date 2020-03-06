@@ -1,7 +1,14 @@
 #!/bin/bash
 #
 # Simple Nagios check for nvme using nvme-cli
-# Author: Sam McLeod https://smcleod.net
+# Original Author: Sam McLeod https://smcleod.net
+# https://github.com/sammcj/nagios/blob/master/check_nvme.sh
+# Maintainer : Pierre D. - https://dutiko.com/
+#
+# v2.3 : check if script is runned as root/sudo, exit with unknown error if not
+# v2.2 : add check to detec if nvme disk is detected, exit with unknown error if not
+# v2.1 : add checks to detect if nvme-cli is present, exit with unknown error if not
+# v1 : Original
 #
 # Requirements:
 # nvme-cli - git clone https://github.com/linux-nvme/nvme-cli
@@ -9,9 +16,15 @@
 # Usage:
 # ./check_nvme.sh
 
+# Am I root ?
+if [ $(id -u) -ne 0 ] ; then echo "UNKNOWN: please run as root or with sudo" ; exit 3 ; fi
+
 DISKS=$(lsblk -e 11,253 -dn -o NAME | grep nvme)
 CRIT=false
 MESSAGE=""
+
+command -v nvme >/dev/null 2>&1 || { echo >&2 "UNKNOWN: nvme-cli not found ; please install it" ; exit 3; }
+if [ -z "$DISKS" ] ; then echo "UNKNOWN: no nvme disks found"; exit 3; fi
 
 for DISK in $DISKS ; do
   # Check for critical_warning
