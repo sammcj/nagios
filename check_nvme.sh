@@ -5,8 +5,9 @@
 # https://github.com/sammcj/nagios/blob/master/check_nvme.sh
 # Maintainer : Pierre D. - https://dutiko.com/
 #
+# v3 : change detection method
 # v2.3 : check if script is runned as root/sudo, exit with unknown error if not
-# v2.2 : add check to detec if nvme disk is detected, exit with unknown error if not
+# v2.2 : add check to detect if nvme disks are detected, exit with unknown error if not
 # v2.1 : add checks to detect if nvme-cli is present, exit with unknown error if not
 # v1 : Original
 #
@@ -28,24 +29,25 @@ if [ -z "$DISKS" ] ; then echo "UNKNOWN: no nvme disks found"; exit 3; fi
 
 for DISK in $DISKS ; do
   # Check for critical_warning
-  $(nvme smart-log /dev/$DISK | awk 'FNR == 2 && $3 != 0 {exit 1}')
-  if [ $? == 1 ]; then
+  CRITICAL_WARNING=$(nvme smart-log /dev/$DISK | grep "critical_warning" | awk '{print $3}')
+  if [ $CRITICAL_WARNING -ne 0 ]; then
     CRIT=true
-    MESSAGE="$MESSAGE $DISK has critical warning "
+    MESSAGE="$MESSAGE $DISK has $CRITICAL_WARNING critical warning "
   fi
 
   # Check media_errors
-  $(nvme smart-log /dev/$DISK | awk 'FNR == 15 && $3 != 0 {exit 1}')
-  if [ $? == 1 ]; then
+  MEDIA_ERRORS=$(nvme smart-log /dev/$DISK | grep "media_errors" | awk '{print $3}')
+  if [ $MEDIA_ERRORS -ne 0 ]; then
     CRIT=true
-    MESSAGE="$MESSAGE $DISK has media errors "
+    MESSAGE="$MESSAGE $DISK has $MEDIA_ERRORS media errors "
   fi
 
   # Check num_err_log_entries
   $(nvme smart-log /dev/$DISK | awk 'FNR == 16 && $3 != 0 {exit 1}')
-  if [ $? == 1 ]; then
+  NUM_ERR_LOG_ENTRIES=$(nvme smart-log /dev/$DISK | grep ""num_err_log_entries | awk '{print $3}')
+  if [ $NUM_ERR_LOG_ENTRIES -ne 0 ]; then
     CRIT=true
-    MESSAGE="$MESSAGE $DISK has errors logged "
+    MESSAGE="$MESSAGE $DISK has $NUM_ERR_LOG_ENTRIES errors logged "
   fi
 done
 
